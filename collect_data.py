@@ -8,15 +8,19 @@ import numpy as np
 def unzip(zipped_list):
     return list(map(list, zip(*zipped_list)))
 
+# Earliest date to keep in dataset
+min_date = pd.to_datetime('2020-03-01')
 
 # Get case data for the word
 cases = pd.read_excel(
-    'https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-2020-10-07.xlsx')
+    'https://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-2020-10-12.xlsx')
+cases = cases.loc[cases['dateRep'] > min_date]
 
 # Stringency index
 stringency = pd.read_csv(
     'https://raw.githubusercontent.com/OxCGRT/covid-policy-tracker/master/data/OxCGRT_latest.csv')
 stringency['Date'] = pd.to_datetime(stringency['Date'], format="%Y%m%d")
+stringency = stringency.loc[stringency['Date'] > min_date]
 
 # Loop over countries to match case data with symptom data
 # avg_sample_size = []
@@ -77,7 +81,7 @@ for country in tqdm(cases['countriesAndTerritories'].unique()):
         pd.DataFrame(percent_mask, index=time_mask, columns=[f'mask_{country}']),
         pd.DataFrame(stringency_country['StringencyIndex'].values, index=stringency_country['Date'], columns=[f'stringency_{country}']).groupby('Date').max(),
         pd.DataFrame(cases_country['cases'].values / cases_country['popData2019'].values, index=cases_country['dateRep'], columns=[f'cases_{country}']),
-    ], axis=1, join='inner')
+    ], axis=1, join='outer')
     df_li.append(df_c)
     countries.append(country)
 
